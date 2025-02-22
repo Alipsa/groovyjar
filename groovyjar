@@ -14,9 +14,23 @@ if [[ ! -f "$jarName" ]]; then
   echo "Jar file $jarName does not exist"
   exit 1
 fi
-if [[ $# -eq 2 ]]; then
-  mainClass=$2
-else
+
+if [[ $# -ge 2 ]]; then
+  if [[ "$2" == "--args="* ]]; then
+    args=("${2#*=}")
+  else
+    mainClass=$2
+  fi
+fi
+if [[ $# -ge 3 ]]; then
+  if [[ "$3" == "--args="* ]]; then
+    args=("${3#*=}")
+  else
+    mainClass=$3
+  fi
+fi
+
+if [[ -z $mainClass ]]; then
   # Extract the main class from the manifest
   mainClass=$(unzip -p "$jarName" "META-INF/MANIFEST.MF" | grep 'Main-Class:' | awk '{ print $2 }' | tr -d '\r')
   if [[ "$mainClass" == "" ]]; then
@@ -25,4 +39,5 @@ else
     exit 1
   fi
 fi
-java -cp "$jarName":"$GROOVY_HOME"/lib/* "$mainClass"
+
+java -cp "$jarName":"$GROOVY_HOME"/lib/* "$mainClass" $args
