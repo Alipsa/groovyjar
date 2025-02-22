@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+if [[ "$1" == "--help" || "$1" == "-?" ]]; then
+  echo "Run a groovy jar, similar to java -jar"
+  echo "groovyjar path/to/jarfile [main class]"
+  echo "if main class is omitted, it is read from the Main-Class attribute of the manifest"
+  exit
+fi
+if [[ -z "$GROOVY_HOME" ]]; then
+  echo "GROOVY_HOME env is not set, please set it prior to running this script"
+  exit 1
+fi
+jarName="$1"
+if [[ ! -f "$jarName" ]]; then
+  echo "Jar file $jarName does not exist"
+  exit 1
+fi
+if [[ $# -eq 2 ]]; then
+  mainClass=$2
+else
+  # Extract the main class from the manifest
+  mainClass=$(unzip -p "$jarName" "META-INF/MANIFEST.MF" | grep 'Main-Class:' | awk '{ print $2 }' | tr -d '\r')
+  if [[ "$mainClass" == "" ]]; then
+    echo "Failed to extract Main-Class attribute from META-INF/MANIFEST.MF in the $jarName"
+    echo "Either pass the class name as a second parameter or add the attribute to the jar"
+    exit 1
+  fi
+fi
+java -cp "$jarName":"$GROOVY_HOME"/lib/* "$mainClass"
