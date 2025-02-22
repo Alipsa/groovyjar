@@ -42,4 +42,4 @@ fi
 # Disable glob expansion so that * is a valid argument (the * in -cp is handled by java so no worries)
 set -f
 # shellcheck disable=SC2048,SC2086
-java -cp "$jarName":"$GROOVY_HOME/lib/*" "$mainClass" ${args[*]}
+java -cp "$jarName:$GROOVY_HOME/lib/*" "$mainClass" ${args[*]}
