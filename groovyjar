@@ -1,13 +1,29 @@
 #!/usr/bin/env bash
 if [[ "$1" == "--help" || "$1" == "-?" ]]; then
   echo "Run a groovy jar, similar to java -jar"
-  echo "groovyjar path/to/jarfile [main class]"
+  echo 'groovyjar path/to/jarfile [main.class.Name] [-args="arguments separated by space"]'
   echo "if main class is omitted, it is read from the Main-Class attribute of the manifest"
   exit
 fi
-if [[ -z "$GROOVY_HOME" ]]; then
-  echo "GROOVY_HOME env is not set, please set it prior to running this script"
-  exit 1
+
+### Check environment ###
+if [[ ! -v GROOVY_HOME ]]; then
+  if command -v groovy 2>&1 >/dev/null; then
+    gcmd=$(command -v groovy)
+    GROOVY_HOME=$(dirname "$gcmd")/..
+  else
+    echo "GROOVY_HOME env is not set, please set it prior to running this script"
+    exit 1
+  fi
+fi
+
+if ! command -v java 2>&1 >/dev/null; then
+  if [[ -v JAVA_HOME ]]; then
+    PATH="$JAVA_HOME/bin:$PATH"
+  else
+    echo "Java is not in the path"
+    exit 1
+  fi
 fi
 
 # OS specific support (must be 'true' or 'false').
@@ -34,6 +50,7 @@ case "$(uname)" in
     ;;
 esac
 
+### Process arguments ###
 jarName="$1"
 if [[ ! -f "$jarName" ]]; then
   echo "Jar file $jarName does not exist"
@@ -65,6 +82,7 @@ if [[ -z $mainClass ]]; then
   fi
 fi
 
+### setup runtime ###
 JAVA_OPTS="$JAVA_OPTS --add-opens=java.base/java.io=ALL-UNNAMED \
 --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.annotation=ALL-UNNAMED \
 --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.module=ALL-UNNAMED \
@@ -104,7 +122,7 @@ JAVA_OPTS="$JAVA_OPTS --add-opens=java.base/java.io=ALL-UNNAMED \
 --add-opens=java.desktop/sun.java2d=ALL-UNNAMED --add-opens=java.desktop/sun.font=ALL-UNNAMED"
 # sun.awt.windows just on windows platforms
 if [ $msys = 'true' ] || [ $cygwin = 'true' ]; then
-    [ "$GROOVY_TURN_OFF_JAVA_WARNINGS" = "true" ] &&       JAVA_OPTS="$JAVA_OPTS --add-opens=java.desktop/sun.awt.windows=ALL-UNNAMED"
+    JAVA_OPTS="$JAVA_OPTS --add-opens=java.desktop/sun.awt.windows=ALL-UNNAMED"
 fi
 
 # Disable glob expansion so that * is a valid argument (the * in -cp is handled by java so no worries)
